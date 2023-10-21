@@ -15,16 +15,25 @@ def raman_analytic(z, a, b, c, d, k,k2):
     i3 = 2*(np.real(a)*np.imag(b)- np.imag(a)*np.real(b))*(np.exp(-1j*k2*z)*k2*(-2j*(d-c*np.exp(2j*k2*z))*k*np.cos(2*k*z)+ (d+c*np.exp(2j*k2*z))*k2*np.sin(2*k*z))-2j*(c-d)*k2*k)/(-4*k**2+k2**2)
     return i1 + i2 + i3
 
-def raman_cross_section(opt,reso):
+def spectrum_analytic(z, ram, a, b, c, d, k, k2):
+    i1 = a**2*(c*(-1+np.exp(1j*(2*k+k2)*z))*k2/(2*k+k2) + d*(-1 + np.exp(1j*(2*k-k2)*z))*k2/(-2*k+k2))
+    i2 = 2*a*b*(c*(np.exp(1j*k2*z)-1)+d*(np.exp(-1j*k2*z)-1))
+    i3 = b**2*(c*(1-np.exp(-1j*(2*k-k2)*z))*k2/(2*k-k2) + d*(-1 + np.exp(-1j*(2*k+k2)*z))*k2/(2*k+k2))
+    return ram*(i1+i2+i3)
+
+def detection_spectrum(opt,reso):
     inds = opt.photoelastic_index()
     opt.calc_complex_amplitudes()
     reso.calc_complex_amplitudes()
     raman_total = 0 + 0*1j
+    result = 0 + 0*1j
     dist_integral = np.array(opt.ds*opt.p[0] + [opt.spacer[1]] + opt.ds[::-1]*opt.p[1])[inds-1]
     k_optic , k_acoustic = opt.ks[inds[0]-1],reso.ks[inds[0]-1]
     for i,val in enumerate(inds):
         raman_total += raman_analytic(dist_integral[i],opt.Es[val][0],opt.Es[val][1],reso.Es[val][0],reso.Es[val][1],k_optic,k_acoustic)
-    return np.abs(raman_total)**2
+    for i,val in enumerate(inds):
+        result += spectrum_analytic(dist_integral[i], raman_total, opt.Es[val][0], opt.Es[val][1], reso.Es[val][0], reso.Es[val][1], k_optic, k_acoustic)
+    return np.abs(result)**2
     
     
     
